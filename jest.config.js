@@ -12,5 +12,8 @@ module.exports = {
     "/node_modules/",
     "/dist/",
     "/livrable-tp1-tests/",
+    "/livrable-tp1-swagger/",
+    "/livrable-tp2-events/",
+    "/livrable-t1-docker/",
   ],
 };
