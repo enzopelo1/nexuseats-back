@@ -1,0 +1,119 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AuthController = void 0;
+const openapi = require("@nestjs/swagger");
+const common_1 = require("@nestjs/common");
+const swagger_1 = require("@nestjs/swagger");
+const auth_service_1 = require("./auth.service");
+const register_dto_1 = require("./dto/register.dto");
+const login_dto_1 = require("./dto/login.dto");
+const jwt_auth_guard_1 = require("./jwt-auth.guard");
+const current_user_decorator_1 = require("./current-user.decorator");
+const throttler_1 = require("@nestjs/throttler");
+let AuthController = class AuthController {
+    constructor(authService) {
+        this.authService = authService;
+    }
+    async register(dto) {
+        return this.authService.register(dto);
+    }
+    async login(dto) {
+        return this.authService.login(dto);
+    }
+    getProfile(user) {
+        return user;
+    }
+};
+exports.AuthController = AuthController;
+__decorate([
+    (0, common_1.Post)('register'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Inscription',
+        description: 'Crée un compte utilisateur et retourne un JWT',
+    }),
+    (0, swagger_1.ApiBody)({ type: register_dto_1.RegisterDto }),
+    (0, swagger_1.ApiResponse)({
+        status: 201,
+        description: 'Compte créé, JWT retourné',
+        schema: { example: { access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' } },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 409,
+        description: 'Un compte existe déjà avec cet email',
+        schema: { example: { statusCode: 409, message: 'Un compte existe déjà avec cet email', error: 'Conflict' } },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Données invalides (email ou mot de passe trop court)',
+    }),
+    openapi.ApiResponse({ status: 201, type: Object }),
+    __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [register_dto_1.RegisterDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "register", null);
+__decorate([
+    (0, common_1.Post)('login'),
+    (0, throttler_1.Throttle)({ short: { limit: 3, ttl: 1000 } }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Connexion',
+        description: 'Authentification par email/mot de passe, retourne un JWT',
+    }),
+    (0, swagger_1.ApiBody)({ type: login_dto_1.LoginDto }),
+    (0, swagger_1.ApiResponse)({
+        status: 201,
+        description: 'Connexion réussie, JWT retourné',
+        schema: { example: { access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' } },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 401,
+        description: 'Email ou mot de passe incorrect',
+        schema: { example: { statusCode: 401, message: 'Email ou mot de passe incorrect', error: 'Unauthorized' } },
+    }),
+    openapi.ApiResponse({ status: 201, type: Object }),
+    __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [login_dto_1.LoginDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Get)('profile'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)('JWT'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Profil utilisateur',
+        description: 'Retourne les infos de l\'utilisateur connecté (route protégée)',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Profil utilisateur',
+        schema: { example: { id: 1, email: 'marco@nexus.dev', role: 'customer' } },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 401,
+        description: 'Non authentifié ou token invalide',
+    }),
+    openapi.ApiResponse({ status: 200 }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "getProfile", null);
+exports.AuthController = AuthController = __decorate([
+    (0, swagger_1.ApiTags)('auth'),
+    (0, common_1.Controller)({ path: 'auth', version: common_1.VERSION_NEUTRAL }),
+    __metadata("design:paramtypes", [auth_service_1.AuthService])
+], AuthController);
+//# sourceMappingURL=auth.controller.js.map

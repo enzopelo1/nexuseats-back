@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Restaurant {
+  id           String      @id @default(uuid())
+  name         String      @db.VarChar(100)
+  cuisine      CuisineType
+  address      String      @db.VarChar(200)
+  countryCode  String      @db.VarChar(5)
+  localNumber  String      @db.VarChar(15)
+  rating       Float       @default(0)
+  averagePrice Decimal     @db.Decimal(10, 2)
+  deliveryTime Int
+  isOpen       Boolean     @default(true)
+  description  String?
+  imageUrl     String?     @db.VarChar(500)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
+  ownerId      Int?
+  menus        Menu[]
+  owner        User?       @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  @@index([cuisine])
+  @@index([rating(sort: Desc)])
+  @@index([name])
+  @@index([ownerId])
+  @@map("restaurants")
+}
+
+model Menu {
+  id           String     @id @default(uuid())
+  name         String     @db.VarChar(100)
+  description  String?
+  restaurantId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  items        MenuItem[]
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId])
+  @@map("menus")
+}
+
+model MenuItem {
+  id          String     @id @default(uuid())
+  name        String     @db.VarChar(100)
+  description String?
+  price       Decimal    @db.Decimal(10, 2)
+  imageUrl    String?    @db.VarChar(500)
+  available   Boolean    @default(true)
+  menuId      String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  menu        Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  categories  Category[] @relation("CategoryToMenuItem")
+
+  @@index([menuId])
+  @@index([available])
+  @@index([price])
+  @@map("menu_items")
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String     @unique @db.VarChar(50)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     MenuItem[] @relation("CategoryToMenuItem")
+
+  @@map("categories")
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  email       String       @unique @db.VarChar(255)
+  password    String       @db.VarChar(255)
+  role        String       @default("customer") @db.VarChar(50)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  restaurants Restaurant[]
+
+  @@map("users")
+}
+
+enum CuisineType {
+  FRENCH
+  ITALIAN
+  JAPANESE
+  CHINESE
+  INDIAN
+  MEXICAN
+  AMERICAN
+  MEDITERRANEAN
+  THAI
+  OTHER
+}

@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+Dockerfile*
+docker-compose*.yml
+.git
+.gitignore
+.env
+.env.*
+coverage
+dist
+test
+tests
+*.log
+livrable-*
+**/livrable-*
+

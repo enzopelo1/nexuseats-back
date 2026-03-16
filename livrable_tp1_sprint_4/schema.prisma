@@ -1,0 +1,117 @@
+// Schéma Prisma pour NexusEats
+// Base de données PostgreSQL avec 4 modèles principaux
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enum pour les types de cuisine
+enum CuisineType {
+  FRENCH
+  ITALIAN
+  JAPANESE
+  CHINESE
+  INDIAN
+  MEXICAN
+  AMERICAN
+  MEDITERRANEAN
+  THAI
+  OTHER
+}
+
+// Modèle Restaurant - Table principale des restaurants
+model Restaurant {
+  id          String       @id @default(uuid())
+  name        String       @db.VarChar(100)
+  cuisine     CuisineType
+  address     String       @db.VarChar(200)
+  countryCode String       @db.VarChar(5)
+  localNumber String       @db.VarChar(15)
+  rating      Float        @default(0) @db.DoublePrecision
+  averagePrice Decimal     @db.Decimal(10, 2)
+  deliveryTime Int
+  isOpen      Boolean      @default(true)
+  description String?      @db.Text
+  imageUrl    String?      @db.VarChar(500)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  
+  // Relation 1:N avec Menu
+  menus       Menu[]
+
+  @@index([cuisine])
+  @@index([rating])
+  @@map("restaurants")
+}
+
+// Modèle Menu - Menus proposés par les restaurants
+model Menu {
+  id           String     @id @default(uuid())
+  name         String     @db.VarChar(100)
+  description  String?    @db.Text
+  restaurantId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  // Relation N:1 avec Restaurant (Cascade delete)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  
+  // Relation 1:N avec MenuItem
+  items        MenuItem[]
+
+  @@index([restaurantId])
+  @@map("menus")
+}
+
+// Modèle MenuItem - Articles du menu
+model MenuItem {
+  id          String     @id @default(uuid())
+  name        String     @db.VarChar(100)
+  description String?    @db.Text
+  price       Decimal    @db.Decimal(10, 2)
+  imageUrl    String?    @db.VarChar(500)
+  available   Boolean    @default(true)
+  menuId      String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  // Relation N:1 avec Menu (Cascade delete)
+  menu        Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  
+  // Relation N:M avec Category
+  categories  Category[]
+
+  @@index([menuId])
+  @@index([available])
+  @@map("menu_items")
+}
+
+// Modèle Category - Catégories des articles (relation N:M implicite)
+model Category {
+  id        String     @id @default(uuid())
+  name      String     @unique @db.VarChar(50)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  // Relation N:M avec MenuItem
+  items     MenuItem[]
+
+  @@map("categories")
+}
+
+// Modèle User - Authentification
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  role      String   @default("customer") @db.VarChar(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
