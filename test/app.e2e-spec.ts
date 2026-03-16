@@ -15,7 +15,7 @@ import { LoggingInterceptor } from '../src/common/interceptors/logging.intercept
 
 describe('App e2e (auth + restaurants)', () => {
   let app: INestApplication;
-  let prisma: PrismaService;
+  let prisma: any;
   let server: any;
   let accessTokenOwner: string;
   let restaurantId: string;
@@ -58,7 +58,7 @@ describe('App e2e (auth + restaurants)', () => {
     );
 
     app.useGlobalFilters(new GlobalExceptionFilter());
-    prisma = app.get(PrismaService);
+    prisma = app.get(PrismaService) as any;
     await app.init();
     server = app.getHttpServer();
 

@@ -6,4 +6,10 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
   rootDir: '.',
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '/livrable-tp2-e2e/',
+  ],
+  modulePathIgnorePatterns: ['livrable-tp2-e2e'],
 };
