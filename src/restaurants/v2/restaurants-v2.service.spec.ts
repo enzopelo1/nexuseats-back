@@ -89,7 +89,7 @@ describe('RestaurantsV2Service', () => {
       },
       countryCode: '+33',
       localNumber: '612345678',
-      cuisineType: CuisineType.ITALIAN,
+      cuisineType: 'ITALIAN' as CuisineType,
       averagePrice: 25,
       deliveryTime: 30,
       phone: '+33612345678',
