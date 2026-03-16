@@ -22,12 +22,6 @@ describe('App e2e (auth + restaurants)', () => {
   let categoryId: string;
 
   beforeAll(async () => {
-    // Appliquer les migrations (sur la même base que l'appli de dev)
-    execSync('npx prisma migrate deploy', {
-      stdio: 'inherit',
-      env: { ...process.env },
-    });
-
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
