@@ -9,6 +9,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://nexuseats:nexuseats_dev@localhost:5432/nexuseats
 
     services:
       postgres:
@@ -44,6 +46,9 @@ jobs:
 
       - name: Generate Prisma client
         run: npx prisma generate
+
+      - name: Apply Prisma migrations (CI database)
+        run: npx prisma migrate deploy
 
       - name: Run lint (optionnel si tu as eslint)
         run: |
