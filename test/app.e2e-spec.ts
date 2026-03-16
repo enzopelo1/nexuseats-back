@@ -6,7 +6,6 @@ import request from 'supertest';
 
 // Mock de uuid (module ESM) pour éviter l'erreur Jest sur l'import
 jest.mock('uuid', () => ({ v4: () => 'test-uuid' }));
-import { execSync } from 'child_process';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
