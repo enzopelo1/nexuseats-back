@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RestaurantsV2Service } from './restaurants-v2.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { CuisineType } from '@prisma/client';
+type CuisineType = any;
 
 describe('RestaurantsV2Service', () => {
   let service: RestaurantsV2Service;

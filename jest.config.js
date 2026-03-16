@@ -8,6 +8,12 @@ module.exports = {
   transform: {
     ...tsJestTransformCfg,
   },
+  modulePathIgnorePatterns: [
+    "livrable-tp1-tests",
+    "livrable-tp1-swagger",
+    "livrable-tp2-events",
+    "livrable-t1-docker",
+  ],
   testPathIgnorePatterns: [
     "/node_modules/",
     "/dist/",
