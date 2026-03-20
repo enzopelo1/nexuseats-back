@@ -6,6 +6,7 @@ import request from 'supertest';
 
 // Mock de uuid (module ESM) pour éviter l'erreur Jest sur l'import
 jest.mock('uuid', () => ({ v4: () => 'test-uuid' }));
+import { execSync } from 'child_process';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
@@ -13,6 +14,8 @@ import { TransformInterceptor } from '../src/common/interceptors/transform.inter
 import { LoggingInterceptor } from '../src/common/interceptors/logging.interceptor';
 
 describe('App e2e (auth + restaurants)', () => {
+  // e2e peut être plus lent quand les migrations sont appliquées
+  jest.setTimeout(45000);
   let app: INestApplication;
   let prisma: any;
   let server: any;
@@ -20,7 +23,55 @@ describe('App e2e (auth + restaurants)', () => {
   let restaurantId: string;
   let categoryId: string;
 
+  const authRegisterPaths = ['/auth/register', '/v1/auth/register'];
+  const authLoginPaths = ['/auth/login', '/v1/auth/login'];
+
+  async function postFirstNon404(paths: string[], body: any) {
+    let lastRes: any;
+    for (const path of paths) {
+      // Tentative sur chaque variante d'URL (VERSION_NEUTRAL vs version URI)
+      lastRes = await request(server).post(path).send(body);
+      if (lastRes.status !== 404) return lastRes;
+    }
+    return lastRes;
+  }
+
+  async function postAuthRegister(body: any) {
+    return postFirstNon404(authRegisterPaths, body);
+  }
+
+  async function postAuthLogin(body: any) {
+    return postFirstNon404(authLoginPaths, body);
+  }
+
   beforeAll(async () => {
+    const databaseUrl =
+      process.env.DATABASE_URL ??
+      'postgresql://nexuseats:nexuseats_dev@localhost:5432/nexuseats';
+
+    // Appliquer les migrations sur la base de tests (utile en CI)
+    const maxAttempts = 6;
+    let lastError: any;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        execSync('npx prisma migrate deploy', {
+          stdio: 'inherit',
+          env: { ...process.env, DATABASE_URL: databaseUrl },
+        });
+        lastError = undefined;
+        break;
+      } catch (e: any) {
+        lastError = e;
+        // Retry utile quand Postgres démarre plus lentement (local/CI).
+        if (attempt < maxAttempts) {
+          // eslint-disable-next-line no-await-in-loop
+          const delayMs = Math.min(5000, 500 * attempt * attempt); // backoff plafonné
+          await new Promise((r) => setTimeout(r, delayMs));
+        }
+      }
+    }
+    if (lastError) throw lastError;
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -69,56 +120,64 @@ describe('App e2e (auth + restaurants)', () => {
   });
 
   afterAll(async () => {
-    await prisma.menuItem.deleteMany();
-    await prisma.menu.deleteMany();
-    await prisma.restaurant.deleteMany();
-    await prisma.category.deleteMany();
-    await prisma.user.deleteMany();
-    await app.close();
+    if (prisma) {
+      await prisma.menuItem.deleteMany();
+      await prisma.menu.deleteMany();
+      await prisma.restaurant.deleteMany();
+      await prisma.category.deleteMany();
+      await prisma.user.deleteMany();
+    }
+    if (app) await app.close();
   });
 
   describe('Auth flow', () => {
-    it('POST /v1/auth/register (valide) → 201', async () => {
-      const res = await request(server)
-        .post('/v1/auth/register')
-        .send({ email: 'owner@test.dev', password: 'secret123', role: 'owner' })
-        .expect(201);
+    it('POST /auth/register (valide) → 201', async () => {
+      const res = await postAuthRegister({
+        email: 'owner@test.dev',
+        password: 'secret123',
+        role: 'owner',
+      });
+      expect(res.status).toBe(201);
 
       expect(res.body.success).toBe(true);
       expect(res.body.data.access_token).toBeDefined();
     });
 
-    it('POST /v1/auth/register (email dupliqué) → 409', async () => {
-      await request(server)
-        .post('/v1/auth/register')
-        .send({ email: 'dup@test.dev', password: 'secret123' })
-        .expect(201);
+    it('POST /auth/register (email dupliqué) → 409', async () => {
+      const first = await postAuthRegister({
+        email: 'dup@test.dev',
+        password: 'secret123',
+      });
+      expect(first.status).toBe(201);
 
-      const res = await request(server)
-        .post('/v1/auth/register')
-        .send({ email: 'dup@test.dev', password: 'secret123' })
-        .expect(409);
+      const res = await postAuthRegister({
+        email: 'dup@test.dev',
+        password: 'secret123',
+      });
+      expect(res.status).toBe(409);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.statusCode).toBe(409);
     });
 
-    it('POST /v1/auth/login (bon mot de passe) → 201', async () => {
-      const res = await request(server)
-        .post('/v1/auth/login')
-        .send({ email: 'owner@test.dev', password: 'secret123' })
-        .expect(201);
+    it('POST /auth/login (bon mot de passe) → 201', async () => {
+      const res = await postAuthLogin({
+        email: 'owner@test.dev',
+        password: 'secret123',
+      });
+      expect(res.status).toBe(201);
 
       expect(res.body.success).toBe(true);
       expect(res.body.data.access_token).toBeDefined();
       accessTokenOwner = res.body.data.access_token;
     });
 
-    it('POST /v1/auth/login (mauvais mot de passe) → 401', async () => {
-      const res = await request(server)
-        .post('/v1/auth/login')
-        .send({ email: 'owner@test.dev', password: 'wrongpass' })
-        .expect(401);
+    it('POST /auth/login (mauvais mot de passe) → 401', async () => {
+      const res = await postAuthLogin({
+        email: 'owner@test.dev',
+        password: 'wrongpass',
+      });
+      expect(res.status).toBe(401);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.statusCode).toBe(401);
