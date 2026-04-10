@@ -10,7 +10,6 @@ import {
   IsArray,
   Matches,
   IsEmail,
-  ArrayMinSize,
   IsUUID,
   ValidateNested,
 } from 'class-validator';
@@ -161,15 +160,16 @@ export class CreateRestaurantV2Dto {
   imageUrl?: string;
 
   @ApiProperty({
-    description: 'Liste des identifiants de catégories associées au restaurant',
+    description:
+      'Liste optionnelle de catégories (non persistée sur le modèle Restaurant ; réservé à des extensions futures)',
     example: ['a3f1e6b0-5c4d-4c2b-9f9f-1234567890ab'],
-    required: true,
+    required: false,
     type: [String],
   })
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @IsUUID('4', { each: true })
-  categoryIds: string[];
+  categoryIds?: string[];
 
   @ApiProperty({
     description: 'Liste des spécialités du restaurant',

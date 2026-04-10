@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { Order, OrdersService } from './orders.service';
+import { Order, OrderStatus, OrdersService } from './orders.service';
 
 @Controller()
 export class OrdersController {
@@ -12,7 +12,12 @@ export class OrdersController {
     payload: {
       customerEmail: string;
       restaurantId: string;
-      items: { menuItemId: string; quantity: number }[];
+      items: {
+        menuItemId: string;
+        quantity: number;
+        name?: string;
+        unitPrice?: number;
+      }[];
       total: number;
     },
   ): Order {
@@ -27,6 +32,13 @@ export class OrdersController {
   @MessagePattern({ cmd: 'get_order_by_id' })
   handleGetOrderById(@Payload() id: string): Order | null {
     return this.ordersService.findOne(id) ?? null;
+  }
+
+  @MessagePattern({ cmd: 'update_order_status' })
+  handleUpdateOrderStatus(
+    @Payload() payload: { id: string; status: OrderStatus },
+  ): Order | null {
+    return this.ordersService.updateStatus(payload.id, payload.status);
   }
 }
 

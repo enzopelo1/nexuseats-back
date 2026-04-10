@@ -29,7 +29,12 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: 'Compte créé, JWT retourné',
-    schema: { example: { access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' } },
+    schema: {
+      example: {
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        user: { id: 1, email: 'marco@nexus.dev', role: 'customer' },
+      },
+    },
   })
   @ApiResponse({
     status: 409,
@@ -54,7 +59,12 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: 'Connexion réussie, JWT retourné',
-    schema: { example: { access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' } },
+    schema: {
+      example: {
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        user: { id: 1, email: 'marco@nexus.dev', role: 'customer' },
+      },
+    },
   })
   @ApiResponse({
     status: 401,

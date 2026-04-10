@@ -59,6 +59,17 @@ async function main() {
         },
     });
     console.log('✅ Utilisateur owner (seed):', seedOwner.email);
+    const adminPassword = await bcrypt.hash('secret123', 10);
+    const seedAdmin = await prisma.user.upsert({
+        where: { email: 'admin@nexus.dev' },
+        update: {},
+        create: {
+            email: 'admin@nexus.dev',
+            password: adminPassword,
+            role: 'admin',
+        },
+    });
+    console.log('Utilisateur admin (back-office):', seedAdmin.email);
     const categories = await Promise.all([
         prisma.category.create({ data: { name: 'Entrées' } }),
         prisma.category.create({ data: { name: 'Plats' } }),

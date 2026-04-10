@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { HealthController } from './health/health.controller';
 import { OrdersGatewayModule } from './orders-gateway/orders-gateway.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { OrdersGatewayModule } from './orders-gateway/orders-gateway.module';
     MenusModule,
     MenuItemsModule,
     OrdersGatewayModule,
+    AdminModule,
   ],
   controllers: [HealthController],
   providers: [

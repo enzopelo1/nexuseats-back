@@ -1,10 +1,21 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
+/** Ligne de commande : snapshot nom + prix au moment de la commande (affichage sans jointure DB). */
 export interface OrderItem {
   menuItemId: string;
   quantity: number;
+  name?: string;
+  unitPrice?: number;
 }
+
+export type OrderStatus =
+  | 'PENDING'
+  | 'ACCEPTED'
+  | 'PREPARING'
+  | 'READY'
+  | 'DELIVERED'
+  | 'CANCELLED';
 
 export interface Order {
   id: string;
@@ -12,6 +23,7 @@ export interface Order {
   restaurantId: string;
   items: OrderItem[];
   total: number;
+  status: OrderStatus;
   createdAt: Date;
 }
 
@@ -26,12 +38,13 @@ export class OrdersService {
     private readonly analyticsClient: ClientProxy,
   ) {}
 
-  create(order: Omit<Order, 'id' | 'createdAt'>): Order {
+  create(order: Omit<Order, 'id' | 'createdAt' | 'status'>): Order {
     const id = crypto.randomUUID();
     const newOrder: Order = {
       id,
       createdAt: new Date(),
       ...order,
+      status: 'PENDING',
     };
     this.orders.push(newOrder);
 
@@ -63,6 +76,13 @@ export class OrdersService {
 
   findOne(id: string): Order | undefined {
     return this.orders.find((o) => o.id === id);
+  }
+
+  updateStatus(id: string, status: OrderStatus): Order | null {
+    const order = this.orders.find((o) => o.id === id);
+    if (!order) return null;
+    order.status = status;
+    return order;
   }
 }
 

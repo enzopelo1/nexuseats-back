@@ -33,6 +33,11 @@
     "livrable-tp2-optimisation",
     "livrable-tp2-events",
     "livrable-t1-docker",
-    "livrable-tp1-swagger"
+    "livrable-tp1-swagger",
+    "nexuseats-backoffice",
+    "nexuseats-front",
+    "orders-service",
+    "notifications-service",
+    "analytics-service"
   ]
 }

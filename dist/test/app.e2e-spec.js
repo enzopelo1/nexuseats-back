@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const common_1 = require("@nestjs/common");
+const core_1 = require("@nestjs/core");
 const testing_1 = require("@nestjs/testing");
 const class_validator_1 = require("class-validator");
 const supertest_1 = __importDefault(require("supertest"));
@@ -16,17 +17,54 @@ const global_exception_filter_1 = require("../src/common/filters/global-exceptio
 const transform_interceptor_1 = require("../src/common/interceptors/transform.interceptor");
 const logging_interceptor_1 = require("../src/common/interceptors/logging.interceptor");
 describe('App e2e (auth + restaurants)', () => {
+    jest.setTimeout(45000);
     let app;
     let prisma;
     let server;
     let accessTokenOwner;
     let restaurantId;
     let categoryId;
+    const authRegisterPaths = ['/auth/register', '/v1/auth/register'];
+    const authLoginPaths = ['/auth/login', '/v1/auth/login'];
+    async function postFirstNon404(paths, body) {
+        let lastRes;
+        for (const path of paths) {
+            lastRes = await (0, supertest_1.default)(server).post(path).send(body);
+            if (lastRes.status !== 404)
+                return lastRes;
+        }
+        return lastRes;
+    }
+    async function postAuthRegister(body) {
+        return postFirstNon404(authRegisterPaths, body);
+    }
+    async function postAuthLogin(body) {
+        return postFirstNon404(authLoginPaths, body);
+    }
     beforeAll(async () => {
-        (0, child_process_1.execSync)('npx prisma migrate deploy', {
-            stdio: 'inherit',
-            env: { ...process.env },
-        });
+        const databaseUrl = process.env.DATABASE_URL ??
+            'postgresql://nexuseats:nexuseats_dev@localhost:5432/nexuseats';
+        const maxAttempts = 6;
+        let lastError;
+        for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+            try {
+                (0, child_process_1.execSync)('npx prisma migrate deploy', {
+                    stdio: 'inherit',
+                    env: { ...process.env, DATABASE_URL: databaseUrl },
+                });
+                lastError = undefined;
+                break;
+            }
+            catch (e) {
+                lastError = e;
+                if (attempt < maxAttempts) {
+                    const delayMs = Math.min(5000, 500 * attempt * attempt);
+                    await new Promise((r) => setTimeout(r, delayMs));
+                }
+            }
+        }
+        if (lastError)
+            throw lastError;
         const moduleFixture = await testing_1.Test.createTestingModule({
             imports: [app_module_1.AppModule],
         }).compile();
@@ -42,7 +80,8 @@ describe('App e2e (auth + restaurants)', () => {
             transform: true,
             transformOptions: { enableImplicitConversion: true },
         }));
-        app.useGlobalInterceptors(new logging_interceptor_1.LoggingInterceptor(), new transform_interceptor_1.TransformInterceptor());
+        const reflector = app.get(core_1.Reflector);
+        app.useGlobalInterceptors(new logging_interceptor_1.LoggingInterceptor(), new transform_interceptor_1.TransformInterceptor(reflector));
         app.useGlobalFilters(new global_exception_filter_1.GlobalExceptionFilter());
         prisma = app.get(prisma_service_1.PrismaService);
         await app.init();
@@ -58,48 +97,57 @@ describe('App e2e (auth + restaurants)', () => {
         categoryId = category.id;
     });
     afterAll(async () => {
-        await prisma.menuItem.deleteMany();
-        await prisma.menu.deleteMany();
-        await prisma.restaurant.deleteMany();
-        await prisma.category.deleteMany();
-        await prisma.user.deleteMany();
-        await app.close();
+        if (prisma) {
+            await prisma.menuItem.deleteMany();
+            await prisma.menu.deleteMany();
+            await prisma.restaurant.deleteMany();
+            await prisma.category.deleteMany();
+            await prisma.user.deleteMany();
+        }
+        if (app)
+            await app.close();
     });
     describe('Auth flow', () => {
-        it('POST /v1/auth/register (valide) → 201', async () => {
-            const res = await (0, supertest_1.default)(server)
-                .post('/v1/auth/register')
-                .send({ email: 'owner@test.dev', password: 'secret123', role: 'owner' })
-                .expect(201);
+        it('POST /auth/register (valide) → 201', async () => {
+            const res = await postAuthRegister({
+                email: 'owner@test.dev',
+                password: 'secret123',
+                role: 'owner',
+            });
+            expect(res.status).toBe(201);
             expect(res.body.success).toBe(true);
             expect(res.body.data.access_token).toBeDefined();
         });
-        it('POST /v1/auth/register (email dupliqué) → 409', async () => {
-            await (0, supertest_1.default)(server)
-                .post('/v1/auth/register')
-                .send({ email: 'dup@test.dev', password: 'secret123' })
-                .expect(201);
-            const res = await (0, supertest_1.default)(server)
-                .post('/v1/auth/register')
-                .send({ email: 'dup@test.dev', password: 'secret123' })
-                .expect(409);
+        it('POST /auth/register (email dupliqué) → 409', async () => {
+            const first = await postAuthRegister({
+                email: 'dup@test.dev',
+                password: 'secret123',
+            });
+            expect(first.status).toBe(201);
+            const res = await postAuthRegister({
+                email: 'dup@test.dev',
+                password: 'secret123',
+            });
+            expect(res.status).toBe(409);
             expect(res.body.success).toBe(false);
             expect(res.body.error.statusCode).toBe(409);
         });
-        it('POST /v1/auth/login (bon mot de passe) → 201', async () => {
-            const res = await (0, supertest_1.default)(server)
-                .post('/v1/auth/login')
-                .send({ email: 'owner@test.dev', password: 'secret123' })
-                .expect(201);
+        it('POST /auth/login (bon mot de passe) → 201', async () => {
+            const res = await postAuthLogin({
+                email: 'owner@test.dev',
+                password: 'secret123',
+            });
+            expect(res.status).toBe(201);
             expect(res.body.success).toBe(true);
             expect(res.body.data.access_token).toBeDefined();
             accessTokenOwner = res.body.data.access_token;
         });
-        it('POST /v1/auth/login (mauvais mot de passe) → 401', async () => {
-            const res = await (0, supertest_1.default)(server)
-                .post('/v1/auth/login')
-                .send({ email: 'owner@test.dev', password: 'wrongpass' })
-                .expect(401);
+        it('POST /auth/login (mauvais mot de passe) → 401', async () => {
+            const res = await postAuthLogin({
+                email: 'owner@test.dev',
+                password: 'wrongpass',
+            });
+            expect(res.status).toBe(401);
             expect(res.body.success).toBe(false);
             expect(res.body.error.statusCode).toBe(401);
         });

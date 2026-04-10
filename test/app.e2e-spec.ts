@@ -1,5 +1,10 @@
 import 'dotenv/config';
-import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { useContainer } from 'class-validator';
 import request from 'supertest';
@@ -96,9 +101,10 @@ describe('App e2e (auth + restaurants)', () => {
       }),
     );
 
+    const reflector = app.get(Reflector);
     app.useGlobalInterceptors(
       new LoggingInterceptor(),
-      new TransformInterceptor(),
+      new TransformInterceptor(reflector),
     );
 
     app.useGlobalFilters(new GlobalExceptionFilter());

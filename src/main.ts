@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { useContainer } from 'class-validator';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -41,9 +41,10 @@ async function bootstrap() {
   );
 
   // Intercepteurs globaux (logging + format de réponse)
+  const reflector = app.get(Reflector);
   app.useGlobalInterceptors(
     new LoggingInterceptor(),
-    new TransformInterceptor(),
+    new TransformInterceptor(reflector),
   );
 
   // Filtre d'exception global

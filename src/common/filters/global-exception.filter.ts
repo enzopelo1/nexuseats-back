@@ -37,7 +37,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       }
     }
 
-    // Erreurs Prisma
+    // Prisma : impossible de joindre la base (souvent Postgres arrêté ou mauvaise DATABASE_URL)
+    else if (exception instanceof Prisma.PrismaClientInitializationError) {
+      status = HttpStatus.SERVICE_UNAVAILABLE;
+      error = 'Service Unavailable';
+      message =
+        'Base de données indisponible. Vérifiez que PostgreSQL tourne et que DATABASE_URL est correct.';
+    }
+
+    // Erreurs Prisma (requêtes)
     else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       // Contrainte unique
       if (exception.code === 'P2002') {

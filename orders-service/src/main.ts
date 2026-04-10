@@ -8,7 +8,7 @@ async function bootstrap() {
     {
       transport: Transport.RMQ,
       options: {
-        urls: ['amqp://nexuseats:secret@localhost:5672'],
+        urls: [process.env.RABBITMQ_URL || 'amqp://nexuseats:secret@localhost:5672'],
         queue: 'orders_queue',
         queueOptions: {
           durable: true,

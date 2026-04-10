@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+  ValidationPipe,
+  NotFoundException,
+} from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -10,6 +20,11 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { CurrentUser } from '../auth/current-user.decorator';
 
 @ApiTags('orders')
 @ApiBearerAuth('JWT')
@@ -21,6 +36,7 @@ export class OrdersGatewayController {
   ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Créer une commande',
     description:
@@ -32,7 +48,14 @@ export class OrdersGatewayController {
       example: {
         customerEmail: 'client@example.com',
         restaurantId: '2a9437ae-17a8-4872-93ff-30cc461f8518',
-        items: [{ menuItemId: 'item-1', quantity: 2 }],
+        items: [
+          {
+            menuItemId: 'item-1',
+            quantity: 2,
+            name: 'Plat du jour',
+            unitPrice: 12.5,
+          },
+        ],
         total: 42.5,
       },
     },
@@ -58,7 +81,12 @@ export class OrdersGatewayController {
     body: {
       customerEmail: string;
       restaurantId: string;
-      items: { menuItemId: string; quantity: number }[];
+      items: {
+        menuItemId: string;
+        quantity: number;
+        name?: string;
+        unitPrice?: number;
+      }[];
       total: number;
     },
   ) {
@@ -68,10 +96,11 @@ export class OrdersGatewayController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Lister les commandes',
     description:
-      'Retourne la liste de toutes les commandes depuis le microservice Orders.',
+      'Admin / owner : toutes les commandes. Client : uniquement les commandes associées à son email.',
   })
   @ApiResponse({
     status: 200,
@@ -81,13 +110,23 @@ export class OrdersGatewayController {
     status: 401,
     description: 'Non authentifié (JWT manquant ou invalide)',
   })
-  async getOrders() {
-    return await firstValueFrom(
+  async getOrders(
+    @CurrentUser() user: { id: number; email: string; role: string },
+  ) {
+    const all = await firstValueFrom(
       this.ordersClient.send({ cmd: 'get_orders' }, {}),
+    );
+    if (user.role === 'admin' || user.role === 'owner') {
+      return all;
+    }
+    return all.filter(
+      (o: { customerEmail?: string }) =>
+        (o.customerEmail || '').toLowerCase() === user.email.toLowerCase(),
     );
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Récupérer une commande par ID',
     description:
@@ -110,10 +149,53 @@ export class OrdersGatewayController {
     status: 401,
     description: 'Non authentifié (JWT manquant ou invalide)',
   })
-  async getOrderById(@Param('id') id: string) {
-    return await firstValueFrom(
+  async getOrderById(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: number; email: string; role: string },
+  ) {
+    const order = await firstValueFrom(
       this.ordersClient.send({ cmd: 'get_order_by_id' }, id),
     );
+    if (!order) {
+      throw new NotFoundException('Commande non trouvée');
+    }
+    if (
+      user.role !== 'admin' &&
+      user.role !== 'owner' &&
+      (order as { customerEmail?: string }).customerEmail?.toLowerCase() !==
+        user.email.toLowerCase()
+    ) {
+      throw new NotFoundException('Commande non trouvée');
+    }
+    return order;
+  }
+
+  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'owner')
+  @ApiOperation({
+    summary: 'Mettre à jour le statut d\'une commande',
+    description:
+      'Réservé aux rôles admin et owner (back-office). Met à jour le statut dans le microservice Orders.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID de la commande' })
+  @ApiBody({ type: UpdateOrderStatusDto })
+  @ApiResponse({ status: 200, description: 'Commande mise à jour' })
+  @ApiResponse({ status: 404, description: 'Commande introuvable' })
+  async updateOrderStatus(
+    @Param('id') id: string,
+    @Body(ValidationPipe) dto: UpdateOrderStatusDto,
+  ) {
+    const order = await firstValueFrom(
+      this.ordersClient.send(
+        { cmd: 'update_order_status' },
+        { id, status: dto.status },
+      ),
+    );
+    if (!order) {
+      throw new NotFoundException('Commande non trouvée');
+    }
+    return order;
   }
 }
 

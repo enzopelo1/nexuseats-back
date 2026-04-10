@@ -11,8 +11,15 @@ export interface JwtPayload {
   role: string;
 }
 
+export interface AuthUserPayload {
+  id: number;
+  email: string;
+  role: string;
+}
+
 export interface AuthResponse {
   access_token: string;
+  user: AuthUserPayload;
 }
 
 @Injectable()
@@ -50,7 +57,10 @@ export class AuthService {
     };
 
     const access_token = this.jwtService.sign(payload);
-    return { access_token };
+    return {
+      access_token,
+      user: { id: user.id, email: user.email, role: user.role },
+    };
   }
 
   async login(dto: LoginDto): Promise<AuthResponse> {
@@ -62,7 +72,12 @@ export class AuthService {
       throw new UnauthorizedException('Email ou mot de passe incorrect');
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+    let isPasswordValid = false;
+    try {
+      isPasswordValid = await bcrypt.compare(dto.password, user.password);
+    } catch {
+      throw new UnauthorizedException('Email ou mot de passe incorrect');
+    }
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Email ou mot de passe incorrect');
@@ -75,7 +90,10 @@ export class AuthService {
     };
 
     const access_token = this.jwtService.sign(payload);
-    return { access_token };
+    return {
+      access_token,
+      user: { id: user.id, email: user.email, role: user.role },
+    };
   }
 
   async validateUserById(userId: number) {
