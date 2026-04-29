@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 
 @Injectable()
 export class AdminService {
@@ -51,7 +51,7 @@ export class AdminService {
     let orders: NormalizedOrder[] = [];
     try {
       const raw = await firstValueFrom(
-        this.ordersClient.send({ cmd: 'get_orders' }, {}),
+        this.ordersClient.send({ cmd: 'get_orders' }, {}).pipe(timeout(1500)),
       );
       if (Array.isArray(raw)) {
         orders = raw.map((o: Record<string, unknown>) => ({

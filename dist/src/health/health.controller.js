@@ -43,7 +43,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthController = void 0;
-const openapi = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
 const throttler_1 = require("@nestjs/throttler");
 const net = __importStar(require("net"));
@@ -106,7 +105,6 @@ exports.HealthController = HealthController;
 __decorate([
     (0, common_1.Get)(),
     (0, throttler_1.SkipThrottle)(),
-    openapi.ApiResponse({ status: 200 }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)

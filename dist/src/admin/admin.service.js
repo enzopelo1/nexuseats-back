@@ -50,7 +50,7 @@ let AdminService = class AdminService {
         ]);
         let orders = [];
         try {
-            const raw = await (0, rxjs_1.firstValueFrom)(this.ordersClient.send({ cmd: 'get_orders' }, {}));
+            const raw = await (0, rxjs_1.firstValueFrom)(this.ordersClient.send({ cmd: 'get_orders' }, {}).pipe((0, rxjs_1.timeout)(1500)));
             if (Array.isArray(raw)) {
                 orders = raw.map((o) => ({
                     id: String(o.id),

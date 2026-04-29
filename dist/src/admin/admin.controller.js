@@ -13,7 +13,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminController = void 0;
-const openapi = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
@@ -54,7 +53,6 @@ exports.AdminController = AdminController;
 __decorate([
     (0, common_1.Get)('users'),
     (0, swagger_1.ApiOperation)({ summary: 'Lister les utilisateurs (admin)' }),
-    openapi.ApiResponse({ status: 200 }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
@@ -62,7 +60,6 @@ __decorate([
 __decorate([
     (0, common_1.Patch)('users/:id/role'),
     (0, swagger_1.ApiOperation)({ summary: 'Mettre à jour le rôle (admin)' }),
-    openapi.ApiResponse({ status: 200 }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
@@ -72,7 +69,6 @@ __decorate([
 __decorate([
     (0, common_1.Get)('stats/dashboard'),
     (0, swagger_1.ApiOperation)({ summary: 'Indicateurs pour le tableau de bord back-office' }),
-    openapi.ApiResponse({ status: 200 }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
@@ -80,7 +76,6 @@ __decorate([
 __decorate([
     (0, common_1.Get)('stats/overview'),
     (0, swagger_1.ApiOperation)({ summary: 'Vue statistiques (graphiques)' }),
-    openapi.ApiResponse({ status: 200 }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
@@ -92,7 +87,6 @@ __decorate([
     (0, common_1.Header)('Content-Disposition', 'attachment; filename="nexuseats-stats.csv"'),
     (0, swagger_1.ApiOperation)({ summary: 'Export CSV minimal' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Fichier CSV' }),
-    openapi.ApiResponse({ status: 200, type: String }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)

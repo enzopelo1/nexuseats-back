@@ -10,7 +10,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateRestaurantDto = exports.CuisineType = void 0;
-const openapi = require("@nestjs/swagger");
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 var CuisineType;
@@ -27,9 +26,6 @@ var CuisineType;
     CuisineType["OTHER"] = "other";
 })(CuisineType || (exports.CuisineType = CuisineType = {}));
 class CreateRestaurantDto {
-    static _OPENAPI_METADATA_FACTORY() {
-        return { name: { required: true, type: () => String }, address: { required: true, type: () => String }, phone: { required: true, type: () => String }, cuisineType: { required: true, enum: require("./create-restaurant.dto").CuisineType }, rating: { required: false, type: () => Number, minimum: 0, maximum: 5 }, averagePrice: { required: true, type: () => Number, minimum: 0, maximum: 500 }, deliveryTime: { required: true, type: () => Number, minimum: 10, maximum: 120 }, isOpen: { required: false, type: () => Boolean }, description: { required: false, type: () => String }, imageUrl: { required: false, type: () => String }, specialties: { required: false, type: () => [String] } };
-    }
 }
 exports.CreateRestaurantDto = CreateRestaurantDto;
 __decorate([

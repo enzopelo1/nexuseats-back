@@ -10,33 +10,31 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AddressDto = void 0;
-const openapi = require("@nestjs/swagger");
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class AddressDto {
-    static _OPENAPI_METADATA_FACTORY() {
-        return { street: { required: true, type: () => String, minLength: 2, maxLength: 150 }, city: { required: true, type: () => String, minLength: 2, maxLength: 100 }, zipCode: { required: true, type: () => String, pattern: "/^\\d{5}$/" }, country: { required: true, type: () => String } };
-    }
 }
 exports.AddressDto = AddressDto;
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Rue et numéro',
         example: '15 Rue de la Paix',
+        maxLength: 120,
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(2),
-    (0, class_validator_1.MaxLength)(150),
+    (0, class_validator_1.MaxLength)(120, { message: 'La rue ne doit pas dépasser 120 caractères' }),
     __metadata("design:type", String)
 ], AddressDto.prototype, "street", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Ville',
         example: 'Paris',
+        maxLength: 60,
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(2),
-    (0, class_validator_1.MaxLength)(100),
+    (0, class_validator_1.MaxLength)(60, { message: 'La ville ne doit pas dépasser 60 caractères' }),
     __metadata("design:type", String)
 ], AddressDto.prototype, "city", void 0);
 __decorate([

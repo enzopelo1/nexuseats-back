@@ -10,7 +10,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateOrderStatusDto = void 0;
-const openapi = require("@nestjs/swagger");
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 const ORDER_STATUSES = [
@@ -22,9 +21,6 @@ const ORDER_STATUSES = [
     'CANCELLED',
 ];
 class UpdateOrderStatusDto {
-    static _OPENAPI_METADATA_FACTORY() {
-        return { status: { required: true, type: () => Object, enum: [...ORDER_STATUSES] } };
-    }
 }
 exports.UpdateOrderStatusDto = UpdateOrderStatusDto;
 __decorate([

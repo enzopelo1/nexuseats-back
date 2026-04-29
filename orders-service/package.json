@@ -4,8 +4,8 @@
   "main": "dist/main.js",
   "scripts": {
     "start": "node dist/main.js",
-    "start:dev": "nest start --watch",
-    "build": "nest build"
+    "start:dev": "ts-node src/main.ts",
+    "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.14",
@@ -13,6 +13,10 @@
     "@nestjs/microservices": "^11.1.14",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "ts-node": "^10.9.2",
+    "typescript": "5.9.3"
   }
 }
-

@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
+import {
+  getApiErrorMessages,
+  getApiErrorToastLine,
+  restaurantMessagesByField,
+  type RestaurantFormFieldKey,
+} from "@/lib/api-errors";
+import { cn } from "@/lib/utils";
 import { Restaurant } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,6 +87,24 @@ export default function Restaurants() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Restaurant | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<RestaurantFormFieldKey, string>>>({});
+  const [generalFormError, setGeneralFormError] = useState<string | null>(null);
+
+  const clearFieldError = (key: RestaurantFormFieldKey) => {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (open) {
+      setFieldErrors({});
+      setGeneralFormError(null);
+    }
+  }, [open]);
 
   const { data: list = [], isLoading } = useQuery<Restaurant[]>({
     queryKey: ["restaurants"],
@@ -124,10 +149,22 @@ export default function Restaurants() {
       setEditing(null);
     },
     onError: (e: unknown) => {
-      const msg =
-        (e as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message ?? "Erreur";
-      toast.error(typeof msg === "string" ? msg : "Erreur");
+      const messages = getApiErrorMessages(e);
+      if (messages.length) {
+        const { fields, general } = restaurantMessagesByField(messages);
+        setFieldErrors(fields);
+        setGeneralFormError(general.length ? general.join("\n") : null);
+        const summary =
+          messages.length > 4
+            ? `${messages.slice(0, 4).join(" · ")} · … (${messages.length} au total)`
+            : messages.join(" · ");
+        toast.error(summary);
+      } else {
+        const line = getApiErrorToastLine(e);
+        setFieldErrors({});
+        setGeneralFormError(line);
+        toast.error(line);
+      }
     },
   });
 
@@ -179,51 +216,136 @@ export default function Restaurants() {
             <DialogHeader>
               <DialogTitle>{editing ? "Modifier" : "Créer"} un restaurant</DialogTitle>
             </DialogHeader>
+            {generalFormError && (
+              <div className="rounded-md border border-destructive/50 bg-destructive/10 text-destructive text-sm p-3 whitespace-pre-wrap">
+                {generalFormError}
+              </div>
+            )}
             <div className="space-y-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1 sm:col-span-2">
                 <Label>Nom</Label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                <Input
+                  value={form.name}
+                  className={cn(fieldErrors.name && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => {
+                    clearFieldError("name");
+                    setForm({ ...form, name: e.target.value });
+                  }}
+                />
+                {fieldErrors.name && <p className="text-sm text-destructive">{fieldErrors.name}</p>}
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <Label>Rue</Label>
-                <Input value={form.street} onChange={(e) => setForm({ ...form, street: e.target.value })} />
+                <Input
+                  value={form.street}
+                  className={cn(fieldErrors.street && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => {
+                    clearFieldError("street");
+                    setForm({ ...form, street: e.target.value });
+                  }}
+                />
+                {fieldErrors.street && <p className="text-sm text-destructive">{fieldErrors.street}</p>}
               </div>
               <div className="space-y-1">
                 <Label>Ville</Label>
-                <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+                <Input
+                  value={form.city}
+                  className={cn(fieldErrors.city && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => {
+                    clearFieldError("city");
+                    setForm({ ...form, city: e.target.value });
+                  }}
+                />
+                {fieldErrors.city && <p className="text-sm text-destructive">{fieldErrors.city}</p>}
               </div>
               <div className="space-y-1">
                 <Label>Code postal (5 chiffres)</Label>
-                <Input value={form.zipCode} onChange={(e) => setForm({ ...form, zipCode: e.target.value })} />
+                <Input
+                  value={form.zipCode}
+                  className={cn(fieldErrors.zipCode && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => {
+                    clearFieldError("zipCode");
+                    setForm({ ...form, zipCode: e.target.value });
+                  }}
+                />
+                {fieldErrors.zipCode && <p className="text-sm text-destructive">{fieldErrors.zipCode}</p>}
               </div>
               <div className="space-y-1">
                 <Label>Pays (ISO, ex. FR)</Label>
-                <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+                <Input
+                  value={form.country}
+                  className={cn(fieldErrors.country && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => {
+                    clearFieldError("country");
+                    setForm({ ...form, country: e.target.value });
+                  }}
+                />
+                {fieldErrors.country && <p className="text-sm text-destructive">{fieldErrors.country}</p>}
               </div>
               <div className="space-y-1">
                 <Label>Indicatif (ex. +33)</Label>
-                <Input value={form.countryCode} onChange={(e) => setForm({ ...form, countryCode: e.target.value })} />
+                <Input
+                  value={form.countryCode}
+                  className={cn(fieldErrors.countryCode && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => {
+                    clearFieldError("countryCode");
+                    setForm({ ...form, countryCode: e.target.value });
+                  }}
+                />
+                {fieldErrors.countryCode && (
+                  <p className="text-sm text-destructive">{fieldErrors.countryCode}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label>Numéro local</Label>
-                <Input value={form.localNumber} onChange={(e) => setForm({ ...form, localNumber: e.target.value })} />
+                <Input
+                  value={form.localNumber}
+                  className={cn(fieldErrors.localNumber && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => {
+                    clearFieldError("localNumber");
+                    setForm({ ...form, localNumber: e.target.value });
+                  }}
+                />
+                {fieldErrors.localNumber && (
+                  <p className="text-sm text-destructive">{fieldErrors.localNumber}</p>
+                )}
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <Label>Téléphone international (validation API)</Label>
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <Input
+                  value={form.phone}
+                  className={cn(fieldErrors.phone && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => {
+                    clearFieldError("phone");
+                    setForm({ ...form, phone: e.target.value });
+                  }}
+                />
+                {fieldErrors.phone && <p className="text-sm text-destructive">{fieldErrors.phone}</p>}
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <Label>Email de contact</Label>
-                <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Input
+                  value={form.email}
+                  className={cn(fieldErrors.email && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => {
+                    clearFieldError("email");
+                    setForm({ ...form, email: e.target.value });
+                  }}
+                />
+                {fieldErrors.email && <p className="text-sm text-destructive">{fieldErrors.email}</p>}
               </div>
               <div className="space-y-1">
                 <Label>Cuisine</Label>
                 <select
-                  className="border rounded-md h-10 px-3 text-sm w-full"
+                  className={cn(
+                    "border rounded-md h-10 px-3 text-sm w-full bg-background",
+                    fieldErrors.cuisineType && "border-destructive"
+                  )}
                   value={form.cuisineType}
-                  onChange={(e) =>
-                    setForm({ ...form, cuisineType: e.target.value as FormState["cuisineType"] })
-                  }
+                  onChange={(e) => {
+                    clearFieldError("cuisineType");
+                    setForm({ ...form, cuisineType: e.target.value as FormState["cuisineType"] });
+                  }}
                 >
                   {CUISINES.map((c) => (
                     <option key={c} value={c}>
@@ -231,22 +353,39 @@ export default function Restaurants() {
                     </option>
                   ))}
                 </select>
+                {fieldErrors.cuisineType && (
+                  <p className="text-sm text-destructive">{fieldErrors.cuisineType}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label>Prix moyen (€)</Label>
                 <Input
                   type="number"
                   value={form.averagePrice}
-                  onChange={(e) => setForm({ ...form, averagePrice: parseFloat(e.target.value) || 0 })}
+                  className={cn(fieldErrors.averagePrice && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => {
+                    clearFieldError("averagePrice");
+                    setForm({ ...form, averagePrice: parseFloat(e.target.value) || 0 });
+                  }}
                 />
+                {fieldErrors.averagePrice && (
+                  <p className="text-sm text-destructive">{fieldErrors.averagePrice}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label>Délai livraison (min)</Label>
                 <Input
                   type="number"
                   value={form.deliveryTime}
-                  onChange={(e) => setForm({ ...form, deliveryTime: parseInt(e.target.value, 10) || 30 })}
+                  className={cn(fieldErrors.deliveryTime && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => {
+                    clearFieldError("deliveryTime");
+                    setForm({ ...form, deliveryTime: parseInt(e.target.value, 10) || 30 });
+                  }}
                 />
+                {fieldErrors.deliveryTime && (
+                  <p className="text-sm text-destructive">{fieldErrors.deliveryTime}</p>
+                )}
               </div>
             </div>
             <DialogFooter>

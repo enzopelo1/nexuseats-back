@@ -13,7 +13,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
-const openapi = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const auth_service_1 = require("./auth.service");
@@ -63,7 +62,6 @@ __decorate([
         status: 400,
         description: 'Données invalides (email ou mot de passe trop court)',
     }),
-    openapi.ApiResponse({ status: 201, type: Object }),
     __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [register_dto_1.RegisterDto]),
@@ -92,7 +90,6 @@ __decorate([
         description: 'Email ou mot de passe incorrect',
         schema: { example: { statusCode: 401, message: 'Email ou mot de passe incorrect', error: 'Unauthorized' } },
     }),
-    openapi.ApiResponse({ status: 201, type: Object }),
     __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [login_dto_1.LoginDto]),
@@ -115,7 +112,6 @@ __decorate([
         status: 401,
         description: 'Non authentifié ou token invalide',
     }),
-    openapi.ApiResponse({ status: 200 }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),

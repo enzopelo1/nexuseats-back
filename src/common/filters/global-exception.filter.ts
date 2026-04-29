@@ -66,6 +66,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         error = 'Bad Request';
         message = 'Référence invalide';
       }
+      // Value too long for column type
+      else if (exception.code === 'P2000') {
+        status = HttpStatus.BAD_REQUEST;
+        error = 'Bad Request';
+        message =
+          'Une ou plusieurs valeurs sont trop longues. Vérifiez la longueur des champs saisis.';
+      }
     }
 
     // Environnement de dev : on peut logguer l'exception complète

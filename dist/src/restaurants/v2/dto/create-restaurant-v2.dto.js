@@ -10,7 +10,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateRestaurantV2Dto = void 0;
-const openapi = require("@nestjs/swagger");
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
@@ -18,9 +17,6 @@ const client_1 = require("@prisma/client");
 const address_dto_1 = require("./address.dto");
 const is_unique_restaurant_name_validator_1 = require("../../../common/validators/is-unique-restaurant-name.validator");
 class CreateRestaurantV2Dto {
-    static _OPENAPI_METADATA_FACTORY() {
-        return { name: { required: true, type: () => String }, address: { required: true, type: () => require("./address.dto").AddressDto }, countryCode: { required: true, type: () => String }, localNumber: { required: true, type: () => String }, cuisineType: { required: true, type: () => Object }, phone: { required: true, type: () => String, pattern: "/^\\+?[0-9]{10,15}$/" }, email: { required: true, type: () => String, format: "email" }, rating: { required: false, type: () => Number, minimum: 0, maximum: 5 }, averagePrice: { required: true, type: () => Number, minimum: 0, maximum: 500 }, deliveryTime: { required: true, type: () => Number, minimum: 10, maximum: 120 }, isOpen: { required: false, type: () => Boolean }, description: { required: false, type: () => String }, imageUrl: { required: false, type: () => String }, categoryIds: { required: false, type: () => [String], format: "uuid" }, specialties: { required: false, type: () => [String] } };
-    }
 }
 exports.CreateRestaurantV2Dto = CreateRestaurantV2Dto;
 __decorate([

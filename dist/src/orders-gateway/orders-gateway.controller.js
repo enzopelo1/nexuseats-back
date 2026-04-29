@@ -13,7 +13,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrdersGatewayController = void 0;
-const openapi = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
 const common_2 = require("@nestjs/common");
 const microservices_1 = require("@nestjs/microservices");
@@ -27,19 +26,37 @@ const current_user_decorator_1 = require("../auth/current-user.decorator");
 let OrdersGatewayController = class OrdersGatewayController {
     constructor(ordersClient) {
         this.ordersClient = ordersClient;
+        this.orderCache = new Map();
+    }
+    async sendToOrders(pattern, payload) {
+        try {
+            return await (0, rxjs_1.firstValueFrom)(this.ordersClient.send(pattern, payload).pipe((0, rxjs_1.timeout)(2000)));
+        }
+        catch {
+            throw new common_1.ServiceUnavailableException('Service Orders indisponible');
+        }
     }
     async createOrder(body) {
-        return await (0, rxjs_1.firstValueFrom)(this.ordersClient.send({ cmd: 'create_order' }, body));
+        const order = await this.sendToOrders({ cmd: 'create_order' }, body);
+        this.rememberOrder(order);
+        return order;
     }
     async getOrders(user) {
-        const all = await (0, rxjs_1.firstValueFrom)(this.ordersClient.send({ cmd: 'get_orders' }, {}));
-        if (user.role === 'admin' || user.role === 'owner') {
-            return all;
+        let all;
+        try {
+            all = await this.sendToOrders({ cmd: 'get_orders' }, {});
         }
-        return all.filter((o) => (o.customerEmail || '').toLowerCase() === user.email.toLowerCase());
+        catch {
+            all = [];
+        }
+        const merged = this.mergeCachedOrders(all);
+        if (user.role === 'admin' || user.role === 'owner') {
+            return merged;
+        }
+        return merged.filter((o) => (o.customerEmail || '').toLowerCase() === user.email.toLowerCase());
     }
     async getOrderById(id, user) {
-        const order = await (0, rxjs_1.firstValueFrom)(this.ordersClient.send({ cmd: 'get_order_by_id' }, id));
+        const order = await this.sendToOrders({ cmd: 'get_order_by_id' }, id);
         if (!order) {
             throw new common_1.NotFoundException('Commande non trouvée');
         }
@@ -49,14 +66,37 @@ let OrdersGatewayController = class OrdersGatewayController {
                 user.email.toLowerCase()) {
             throw new common_1.NotFoundException('Commande non trouvée');
         }
+        this.rememberOrder(order);
         return order;
     }
     async updateOrderStatus(id, dto) {
-        const order = await (0, rxjs_1.firstValueFrom)(this.ordersClient.send({ cmd: 'update_order_status' }, { id, status: dto.status }));
+        let order = await this.sendToOrders({ cmd: 'update_order_status' }, { id, status: dto.status });
+        const cached = this.orderCache.get(id);
+        if (!order && cached) {
+            order = { ...cached, status: dto.status };
+        }
         if (!order) {
             throw new common_1.NotFoundException('Commande non trouvée');
         }
+        this.rememberOrder(order);
         return order;
+    }
+    rememberOrder(order) {
+        if (!order?.id)
+            return;
+        this.orderCache.set(String(order.id), { ...order, id: String(order.id) });
+    }
+    mergeCachedOrders(orders) {
+        const merged = new Map();
+        for (const order of orders) {
+            if (order?.id) {
+                merged.set(String(order.id), { ...order, id: String(order.id) });
+            }
+        }
+        for (const [id, order] of this.orderCache) {
+            merged.set(id, order);
+        }
+        return Array.from(merged.values());
     }
 };
 exports.OrdersGatewayController = OrdersGatewayController;
@@ -101,7 +141,6 @@ __decorate([
         status: 503,
         description: 'Service Orders indisponible (timeout RabbitMQ)',
     }),
-    openapi.ApiResponse({ status: 201, type: Object }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -122,7 +161,6 @@ __decorate([
         status: 401,
         description: 'Non authentifié (JWT manquant ou invalide)',
     }),
-    openapi.ApiResponse({ status: 200, type: Object }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -152,7 +190,6 @@ __decorate([
         status: 401,
         description: 'Non authentifié (JWT manquant ou invalide)',
     }),
-    openapi.ApiResponse({ status: 200, type: Object }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
@@ -171,7 +208,6 @@ __decorate([
     (0, swagger_1.ApiBody)({ type: update_order_status_dto_1.UpdateOrderStatusDto }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Commande mise à jour' }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Commande introuvable' }),
-    openapi.ApiResponse({ status: 200, type: Object }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),

@@ -5,19 +5,21 @@ export class AddressDto {
   @ApiProperty({
     description: 'Rue et numéro',
     example: '15 Rue de la Paix',
+    maxLength: 120,
   })
   @IsString()
   @MinLength(2)
-  @MaxLength(150)
+  @MaxLength(120, { message: 'La rue ne doit pas dépasser 120 caractères' })
   street: string;
 
   @ApiProperty({
     description: 'Ville',
     example: 'Paris',
+    maxLength: 60,
   })
   @IsString()
   @MinLength(2)
-  @MaxLength(100)
+  @MaxLength(60, { message: 'La ville ne doit pas dépasser 60 caractères' })
   city: string;
 
   @ApiProperty({

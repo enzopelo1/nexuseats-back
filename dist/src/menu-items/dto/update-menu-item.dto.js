@@ -10,14 +10,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateMenuItemDto = void 0;
-const openapi = require("@nestjs/swagger");
 const swagger_1 = require("@nestjs/swagger");
 const create_menu_item_dto_1 = require("./create-menu-item.dto");
 const class_validator_1 = require("class-validator");
 class UpdateMenuItemDto extends (0, swagger_1.PartialType)(create_menu_item_dto_1.CreateMenuItemDto) {
-    static _OPENAPI_METADATA_FACTORY() {
-        return { name: { required: false, type: () => String }, description: { required: false, type: () => String }, price: { required: false, type: () => Number, minimum: 0 }, imageUrl: { required: false, type: () => String }, available: { required: false, type: () => Boolean }, categoryIds: { required: false, type: () => [String], format: "uuid" } };
-    }
 }
 exports.UpdateMenuItemDto = UpdateMenuItemDto;
 __decorate([

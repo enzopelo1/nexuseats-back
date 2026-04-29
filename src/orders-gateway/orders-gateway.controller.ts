@@ -8,10 +8,11 @@ import {
   UseGuards,
   ValidationPipe,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -26,14 +27,33 @@ import { Roles } from '../auth/roles.decorator';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
 
+type GatewayOrder = {
+  id: string;
+  customerEmail?: string;
+  status?: string;
+  [key: string]: unknown;
+};
+
 @ApiTags('orders')
 @ApiBearerAuth('JWT')
 @Controller({ path: 'orders', version: '1' })
 export class OrdersGatewayController {
+  private readonly orderCache = new Map<string, GatewayOrder>();
+
   constructor(
     @Inject('ORDERS_SERVICE')
     private readonly ordersClient: ClientProxy,
   ) {}
+
+  private async sendToOrders<T>(pattern: Record<string, string>, payload: unknown): Promise<T> {
+    try {
+      return await firstValueFrom(
+        this.ordersClient.send<T>(pattern, payload).pipe(timeout(2000)),
+      );
+    } catch {
+      throw new ServiceUnavailableException('Service Orders indisponible');
+    }
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -90,9 +110,9 @@ export class OrdersGatewayController {
       total: number;
     },
   ) {
-    return await firstValueFrom(
-      this.ordersClient.send({ cmd: 'create_order' }, body),
-    );
+    const order = await this.sendToOrders<GatewayOrder>({ cmd: 'create_order' }, body);
+    this.rememberOrder(order);
+    return order;
   }
 
   @Get()
@@ -113,14 +133,18 @@ export class OrdersGatewayController {
   async getOrders(
     @CurrentUser() user: { id: number; email: string; role: string },
   ) {
-    const all = await firstValueFrom(
-      this.ordersClient.send({ cmd: 'get_orders' }, {}),
-    );
-    if (user.role === 'admin' || user.role === 'owner') {
-      return all;
+    let all: GatewayOrder[];
+    try {
+      all = await this.sendToOrders({ cmd: 'get_orders' }, {});
+    } catch {
+      all = [];
     }
-    return all.filter(
-      (o: { customerEmail?: string }) =>
+    const merged = this.mergeCachedOrders(all);
+    if (user.role === 'admin' || user.role === 'owner') {
+      return merged;
+    }
+    return merged.filter(
+      (o) =>
         (o.customerEmail || '').toLowerCase() === user.email.toLowerCase(),
     );
   }
@@ -153,8 +177,9 @@ export class OrdersGatewayController {
     @Param('id') id: string,
     @CurrentUser() user: { id: number; email: string; role: string },
   ) {
-    const order = await firstValueFrom(
-      this.ordersClient.send({ cmd: 'get_order_by_id' }, id),
+    const order = await this.sendToOrders<Record<string, unknown> | null>(
+      { cmd: 'get_order_by_id' },
+      id,
     );
     if (!order) {
       throw new NotFoundException('Commande non trouvée');
@@ -167,6 +192,7 @@ export class OrdersGatewayController {
     ) {
       throw new NotFoundException('Commande non trouvée');
     }
+    this.rememberOrder(order as GatewayOrder);
     return order;
   }
 
@@ -186,16 +212,37 @@ export class OrdersGatewayController {
     @Param('id') id: string,
     @Body(ValidationPipe) dto: UpdateOrderStatusDto,
   ) {
-    const order = await firstValueFrom(
-      this.ordersClient.send(
-        { cmd: 'update_order_status' },
-        { id, status: dto.status },
-      ),
+    let order = await this.sendToOrders<GatewayOrder | null>(
+      { cmd: 'update_order_status' },
+      { id, status: dto.status },
     );
+    const cached = this.orderCache.get(id);
+    if (!order && cached) {
+      order = { ...cached, status: dto.status };
+    }
     if (!order) {
       throw new NotFoundException('Commande non trouvée');
     }
+    this.rememberOrder(order);
     return order;
+  }
+
+  private rememberOrder(order: GatewayOrder | null | undefined) {
+    if (!order?.id) return;
+    this.orderCache.set(String(order.id), { ...order, id: String(order.id) });
+  }
+
+  private mergeCachedOrders(orders: GatewayOrder[]) {
+    const merged = new Map<string, GatewayOrder>();
+    for (const order of orders) {
+      if (order?.id) {
+        merged.set(String(order.id), { ...order, id: String(order.id) });
+      }
+    }
+    for (const [id, order] of this.orderCache) {
+      merged.set(id, order);
+    }
+    return Array.from(merged.values());
   }
 }
 

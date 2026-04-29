@@ -13,7 +13,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RestaurantsV2Controller = void 0;
-const openapi = require("@nestjs/swagger");
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const restaurants_v2_service_1 = require("./restaurants-v2.service");
@@ -137,7 +136,6 @@ __decorate([
         status: 403,
         description: 'Rôle insuffisant (owner ou admin requis)',
     }),
-    openapi.ApiResponse({ status: 201 }),
     __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
@@ -240,7 +238,6 @@ __decorate([
             },
         },
     }),
-    openapi.ApiResponse({ status: 200 }),
     __param(0, (0, common_1.Query)('page')),
     __param(1, (0, common_1.Query)('limit')),
     __param(2, (0, common_1.Query)('cuisine')),
@@ -290,7 +287,6 @@ __decorate([
             },
         },
     }),
-    openapi.ApiResponse({ status: 200 }),
     __param(0, (0, common_1.Query)('cursor')),
     __param(1, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
@@ -325,7 +321,6 @@ __decorate([
             },
         },
     }),
-    openapi.ApiResponse({ status: 200, type: Object }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -377,7 +372,6 @@ __decorate([
             },
         },
     }),
-    openapi.ApiResponse({ status: 200 }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
@@ -415,7 +409,6 @@ __decorate([
             },
         },
     }),
-    openapi.ApiResponse({ status: common_1.HttpStatus.NO_CONTENT }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

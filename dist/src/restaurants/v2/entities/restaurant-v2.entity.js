@@ -10,13 +10,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RestaurantV2 = void 0;
-const openapi = require("@nestjs/swagger");
 const swagger_1 = require("@nestjs/swagger");
 const client_1 = require("@prisma/client");
 class RestaurantV2 {
-    static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => String }, name: { required: true, type: () => String }, address: { required: true, type: () => String }, countryCode: { required: true, type: () => String }, localNumber: { required: true, type: () => String }, cuisineType: { required: true, type: () => Object }, rating: { required: true, type: () => Number }, averagePrice: { required: true, type: () => Number }, deliveryTime: { required: true, type: () => Number }, isOpen: { required: true, type: () => Boolean }, description: { required: false, type: () => String }, imageUrl: { required: false, type: () => String }, specialties: { required: false, type: () => [String] }, createdAt: { required: true, type: () => Date }, updatedAt: { required: true, type: () => Date } };
-    }
 }
 exports.RestaurantV2 = RestaurantV2;
 __decorate([

@@ -53,6 +53,12 @@ let GlobalExceptionFilter = class GlobalExceptionFilter {
                 error = 'Bad Request';
                 message = 'Référence invalide';
             }
+            else if (exception.code === 'P2000') {
+                status = common_1.HttpStatus.BAD_REQUEST;
+                error = 'Bad Request';
+                message =
+                    'Une ou plusieurs valeurs sont trop longues. Vérifiez la longueur des champs saisis.';
+            }
         }
         if (process.env.NODE_ENV !== 'production') {
             console.error('GlobalExceptionFilter:', exception);
